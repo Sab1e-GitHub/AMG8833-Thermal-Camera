@@ -31,7 +31,7 @@ int Count = 0;//循环count次更新电池电压检测
 int Temp0 = 0;//储存上次测量的中心温度值
 int Temp1 = 0;//中心温度值
 int Cx0 = 64;//储存上一次温度指针的位置
-
+float InterpolationTemp[64][64] = { 0 };//储存插值后的温度
 
 void setup(void) {
   tft.initR(INITR_BLACKTAB);
