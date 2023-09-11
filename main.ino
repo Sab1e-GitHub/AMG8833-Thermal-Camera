@@ -456,6 +456,8 @@ void ColorCursor(){
   
   Cx = ((int)sensor.pixelMatrix[4][4]-MIN_TEMP)*108/(MAX_TEMP-MIN_TEMP);
   Cx = 112 - Cx;
+  if(Cx<9)Cx=9;
+    else if(Cx>116)Cx=116;
   Cx0 = Cx;
   tft.drawPixel(141,Cx,ST77XX_BLACK);
 
