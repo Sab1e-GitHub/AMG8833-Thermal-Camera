@@ -2,6 +2,7 @@
 #include <Adafruit_GFX.h>      //液晶屏图形库
 #include <Adafruit_ST7735.h>   //st7735驱动库（SPI）
 #include <Melopero_AMG8833.h>  //amg8833驱动库（I2C）
+#include <EEPROM.h>
 //按键引脚定义
 #define SwitchOK 2
 #define SwitchUP 3
@@ -22,15 +23,22 @@ Melopero_AMG8833 sensor;  //开启热成像传感器
 #define MID_2_TEMP (((MID / 4)*2)+MIN_TEMP)
 #define MID_3_TEMP (((MID / 4)*1)+MIN_TEMP)
 
+#define Init_ADDRESS 0
+#define ResolutionMode_ADDRESS 1
+#define MAX_TEMP_ADDRESS 2
+#define MIN_TEMP_ADDRESS 3
+#define tempStep_ADDRESS 4
+
 int x = 0, y = 0;  //x y 是AMG8833得到的温度像素坐标轴
-int MAX_TEMP = 44, MIN_TEMP = 20;         //定义两个整形变量，分别对应设置传感器检测的最大温度和最小温度
-int ResolutionMode = 14;//插值模式
+int MAX_TEMP = 44, MIN_TEMP = 20;         //定义两个整形变量，分别对应设置传感器检测的最大温度和最小温度  EEPROM
+int ResolutionMode = 14;//插值模式  EEPROM
 int ClearCode = 1;//用于首次切换到主界面时刷新一次
-int tempStep = 24;//温度步距
+int tempStep = 24;//温度步距  EEPROM
 int Count = 0;//循环count次更新电池电压检测
 int Temp0 = 0;//储存上次测量的中心温度值
 int Temp1 = 0;//中心温度值
 int Cx0 = 64;//储存上一次温度指针的位置
+int okFun = 0;
 float InterpolationTemp[64][64] = { 0 };//储存插值后的温度
 
 void setup(void) {
@@ -46,7 +54,24 @@ void setup(void) {
   pinMode(SwitchUP, INPUT_PULLUP);
   pinMode(SwitchDOWN, INPUT_PULLUP);
   tft.setTextWrap(false);//设置文字环绕
+  if(EEPROM.read(Init_ADDRESS)==1){
+    MAX_TEMP = EEPROM.read(MAX_TEMP_ADDRESS);
+    MIN_TEMP = EEPROM.read(MIN_TEMP_ADDRESS);
+    ResolutionMode = EEPROM.read(ResolutionMode_ADDRESS);
+    tempStep = EEPROM.read(tempStep_ADDRESS);
+  }else {
+    MAX_TEMP = 44;
+    MIN_TEMP = 20;
+    tempStep = 24;
+    ResolutionMode = 14;
+    EEPROM.write(Init_ADDRESS, 1);
+    EEPROM.write(MAX_TEMP_ADDRESS, 44);
+    EEPROM.write(MIN_TEMP_ADDRESS, 20);
+    EEPROM.write(tempStep_ADDRESS, 24);
+    EEPROM.write(ResolutionMode_ADDRESS, 14);
+  }
 }
+
 //主页面
 void loop(void) {
   int statusCode = sensor.updateThermistorTemperature();
@@ -56,6 +81,7 @@ void loop(void) {
     ColorStripe();
     BatteryStripe();
     ClearCode = 0;
+    okFun = 0;
   }
   if (Count == 500) {
     BatteryStripe();
@@ -73,6 +99,7 @@ void loop(void) {
 //函数作用：一级菜单
 void menu1(void) {
 menu1:
+  okFun = 1;
   ClearCode = 1;
   tft.fillScreen(ST77XX_WHITE);
   tft.setCursor(16, 8);
@@ -172,11 +199,13 @@ void menu2_resolution(void) {
       while (digitalRead(SwitchOK) == LOW)
         ;
       switch (CurrentSelection) {
-        case 1: ResolutionMode = 8; return 0;
-        case 2: ResolutionMode = 14; return 0;  //
-        case 3: ResolutionMode = 28; return 0;  //
-        case 4: ResolutionMode = 63; return 0;  //
+        case 1: ResolutionMode = 8; break;
+        case 2: ResolutionMode = 14; break;  //
+        case 3: ResolutionMode = 28; break;  //
+        case 4: ResolutionMode = 63; break;  //
       }
+      EEPROM.write(ResolutionMode_ADDRESS,ResolutionMode);
+      return 0;
     }
   }
 }
@@ -229,10 +258,14 @@ menu2_TempSelect:
         ;
       switch (CurrentSelection) {
         case 1: return 0;
-        case 2: menu3_MaxTemp(); goto menu2_TempSelect;
-        case 3: menu3_MinTemp(); goto menu2_TempSelect;
-        case 4: menu3_tempStep(); goto menu2_TempSelect;
+        case 2: menu3_MaxTemp(); break;
+        case 3: menu3_MinTemp(); break;
+        case 4: menu3_tempStep(); break;
       }
+      EEPROM.write(MAX_TEMP_ADDRESS,MAX_TEMP);
+      EEPROM.write(MIN_TEMP_ADDRESS,MIN_TEMP);
+      EEPROM.write(tempStep_ADDRESS,tempStep);
+      goto menu2_TempSelect;
     }
   }
 }
@@ -456,8 +489,12 @@ void ColorCursor(){
   
   Cx = ((int)sensor.pixelMatrix[4][4]-MIN_TEMP)*108/(MAX_TEMP-MIN_TEMP);
   Cx = 112 - Cx;
-  if(Cx<9)Cx=9;
-    else if(Cx>116)Cx=116;
+  if(Cx<9){
+    Cx=9;
+  }
+    else if(Cx>116){
+      Cx=116;
+    }
   Cx0 = Cx;
   tft.drawPixel(141,Cx,ST77XX_BLACK);
 
