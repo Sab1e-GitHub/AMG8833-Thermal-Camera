@@ -414,11 +414,11 @@ void menu2_info(void) {
   tft.setCursor(8, 28);
   tft.print("Firmware Version :");
   tft.setCursor(8, 38);
-  tft.print("v0.3 [Beta]");
+  tft.print("v0.4 [Beta]");
   tft.setCursor(8, 48);
   tft.print("Update date : ");
   tft.setCursor(8, 58);
-  tft.print("2023-8-17");
+  tft.print("2023-10-25");
   tft.setCursor(8, 68);
   tft.print("Made by Sab1e");
   tft.setCursor(8, 98);
