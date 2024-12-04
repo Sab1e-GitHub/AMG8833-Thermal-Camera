@@ -1,5 +1,7 @@
 # AMG8833-Thermal-Camera
 
+## 此项目已经废弃，请查看新项目：[Kalama](https://github.com/Sab1e-GitHub/Kalama)
+
 #ArduinoNano + AMG8833 +ST7735 热成像仪
 
 本项目使用Arduino IDE开发 
